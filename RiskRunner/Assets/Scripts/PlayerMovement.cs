@@ -10,8 +10,10 @@ public class PlayerMovement : MonoBehaviour {
 	private Transform camera;
 	private float minAngle=-70, maxAngle=70, rotationX,rotationY,rotationZ,sensitivity_x=1f, recoil, compensation, testVel = 0.0f, gravity=0.4f, fallSpeed = 0f, minFallSpeed=-2f, jumpSpeed;
 	public float modifiedMoveSpeed=1, baseMoveSpeed=0.5f;
+	private float p, yVelocity=0, smoothTime=0.05f;
 	// Use this for initialization
 	void Start () {
+		p = .5f;
 		modifiedMoveSpeed = 1;
 		characterController = GetComponent<CharacterController>();
 		camera = GameObject.FindGameObjectWithTag("MainCamera").transform;
@@ -46,10 +48,12 @@ public class PlayerMovement : MonoBehaviour {
 		if(allowInput){
 			moveDirection = new Vector3(Input.GetAxis("Horizontal")*modifiedMoveSpeed,jumpSpeed+fallSpeed,Input.GetAxis("Vertical")*modifiedMoveSpeed);
 			rotationX += Input.GetAxis("Mouse X") * sensitivity_x;
-            rotationY += (Input.GetAxis("Mouse Y") * sensitivity_x) + recoil + compensation;
+            rotationY += (Input.GetAxis("Mouse Y") * sensitivity_x);
+			rotationY += recoil *Time.deltaTime;//compensation;
             transform.rotation = Quaternion.Euler(0, rotationX, 0);
             camera.rotation = Quaternion.Euler(-rotationY, camera.eulerAngles.y, rotationZ);
 		}
+		recoil = Mathf.SmoothDamp(recoil,0,ref yVelocity, smoothTime);
 		//Gravity
 		
 		//Set forward direction
@@ -57,7 +61,20 @@ public class PlayerMovement : MonoBehaviour {
 		characterController.Move(moveDirection*Time.deltaTime*baseMoveSpeed);
 
 		//Rotation:
+		//Smooths out recoil to 0
+		/* 
+		if(recoil !=0)
+		recoil = Mathf.Lerp(recoil,0,p);
+
+		p += 0.05f*Time.deltaTime;
+		
+		if(p>1){
+			recoil = 0;
+			p=0.5f;
+		}
+		*/
 		//Smooths past max angle camera looking
+		
 		if (rotationY > maxAngle)
             rotationY = Mathf.SmoothDamp(rotationY,maxAngle,ref testVel,0.05f);
         if (rotationY < minAngle)
@@ -77,4 +94,9 @@ public class PlayerMovement : MonoBehaviour {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
+
+	public void Recoil(float recoilAmt){
+		recoil = recoilAmt;
+		
+	}
 }
